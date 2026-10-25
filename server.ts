@@ -16,24 +16,29 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '20mb' }));
 
-// Initialize Google GenAI client
-let ai: GoogleGenAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
+// Initialize Google GenAI client - Support both GEMINI_API_KEY and VITE_GEMINI_API_KEY
+const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+
+const getAiClient = (): GoogleGenAI | null => {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) return null;
+  return new GoogleGenAI({
+    apiKey,
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
       },
     },
   });
-}
+};
+
+let ai: GoogleGenAI | null = getAiClient();
 
 // API Health
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+    hasGeminiKey: Boolean(getGeminiApiKey()),
     time: new Date().toISOString(),
   });
 });
@@ -56,8 +61,9 @@ app.post('/api/ai/generate-exam', async (req, res) => {
       });
     }
 
-    // If Gemini API Key is available, use real gemini-3.8-flash model
-    if (ai) {
+    // If Gemini API Key is available, use real gemini-1.5-flash model
+    const aiClient = getAiClient() || ai;
+    if (aiClient) {
       const prompt = `Bạn là chuyên gia giáo dục và biên soạn đề thi trắc nghiệm theo chuẩn chương trình GDPT mới nhất của Bộ Giáo dục & Đào tạo Việt Nam.
 Nhiệm vụ: Đọc kỹ tài liệu lý thuyết sau đây và biên soạn một bộ đề thi trắc nghiệm chất lượng cao gồm:
 - ${mcCount} câu hỏi trắc nghiệm 4 lựa chọn (A, B, C, D)
@@ -106,8 +112,8 @@ Trả về DUY NHẤT một đối tượng JSON hợp lệ (không kèm markdow
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const response = await aiClient.models.generateContent({
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -222,13 +228,14 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không kèm backticks markd
   ]
 }`;
 
-    if (ai) {
+    const aiClient = getAiClient() || ai;
+    if (aiClient) {
       let responseText = '';
 
       if (isPdf) {
         // Native Gemini PDF processing via inlineData
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-1.5-flash',
           contents: [
             {
               role: 'user',
@@ -272,8 +279,8 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không kèm backticks markd
           extractedText = `File tài liệu đề thi: ${fileName}`;
         }
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-1.5-flash',
           contents: `${promptInstructions}\n\nNỘI DUNG VĂN BẢN TRÍCH XUẤT TỪ FILE "${fileName}":\n"""\n${extractedText.slice(0, 50000)}\n"""`,
           config: {
             responseMimeType: 'application/json',
