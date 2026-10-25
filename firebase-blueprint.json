@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role differentiation (teacher or student)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "Email address" },
+        "fullName": { "type": "string", "description": "Full name of the user", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["teacher", "student"], "description": "Account role" },
+        "createdAt": { "type": "string", "description": "Account creation timestamp" }
+      },
+      "required": ["uid", "email", "fullName", "role"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Online exam created by teachers with multiple choice and True/False questions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of exam" },
+        "title": { "type": "string", "description": "Exam title", "maxLength": 200 },
+        "description": { "type": "string", "description": "Description or instructions" },
+        "subject": { "type": "string", "description": "Subject/Course name", "maxLength": 100 },
+        "grade": { "type": "string", "description": "Grade or Class level", "maxLength": 50 },
+        "durationMinutes": { "type": "number", "description": "Exam duration in minutes" },
+        "teacherId": { "type": "string", "description": "Teacher author UID" },
+        "teacherName": { "type": "string", "description": "Teacher author name" },
+        "status": { "type": "string", "enum": ["published", "draft", "closed"], "description": "Exam publishing state" },
+        "questions": { "type": "array", "description": "Array of exam questions" },
+        "createdAt": { "type": "string", "description": "Created ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "Last updated ISO timestamp" }
+      },
+      "required": ["title", "durationMinutes", "teacherId", "status", "questions"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Student test submission with scores, answers, and timestamps",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique submission ID" },
+        "examId": { "type": "string", "description": "Referenced Exam ID" },
+        "examTitle": { "type": "string", "description": "Exam title at time of submission" },
+        "studentId": { "type": "string", "description": "Student Auth UID" },
+        "studentName": { "type": "string", "description": "Student full name" },
+        "studentEmail": { "type": "string", "description": "Student email address" },
+        "score": { "type": "number", "description": "Calculated score on a 10.0 scale" },
+        "correctCount": { "type": "number", "description": "Number of fully correct questions" },
+        "totalCount": { "type": "number", "description": "Total question count" },
+        "durationSpentSeconds": { "type": "number", "description": "Time spent in seconds" },
+        "answers": { "type": "object", "description": "Map of questionId to student answers" },
+        "details": { "type": "array", "description": "Detailed question breakdown" },
+        "submittedAt": { "type": "string", "description": "Submission ISO timestamp" }
+      },
+      "required": ["examId", "studentId", "studentName", "score"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records with role access"
+    },
+    "/exams/{examId}": {
+      "schema": "Exam",
+      "description": "Exams collection created by teachers and taken by students"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Student test submission records and grades"
+    }
+  }
+}

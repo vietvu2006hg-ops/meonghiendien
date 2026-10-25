@@ -1,0 +1,6 @@
+{
+  "name": "SmartTest Online",
+  "description": "Hệ thống thi trắc nghiệm trực tuyến thông minh dành cho trường học với AI tạo đề thi, phân quyền Giáo viên - Học sinh và chấm điểm bảo mật.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
