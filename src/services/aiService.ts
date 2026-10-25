@@ -2,9 +2,21 @@ import { GoogleGenAI } from '@google/genai';
 import mammoth from 'mammoth';
 import { Question } from '../types.ts';
 
+// Gemini AI model for @google/genai SDK v1beta
+export const GEMINI_MODEL = 'gemini-3.8-flash';
+export const FALLBACK_GEMINI_MODEL = 'gemini-flash-latest';
+
 // Get Gemini API Key from Vite environment variable or localStorage for GitHub Pages
 export const getGeminiApiKey = (): string => {
-  const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  const metaEnv = ((import.meta as any).env || {}) as Record<string, string | undefined>;
+  const processEnv = (typeof process !== 'undefined' ? (process as any).env || {} : {}) as Record<string, string | undefined>;
+
+  const envKey =
+    metaEnv.VITE_GEMINI_API_KEY ||
+    metaEnv.GEMINI_API_KEY ||
+    processEnv.VITE_GEMINI_API_KEY ||
+    processEnv.GEMINI_API_KEY;
+
   if (envKey && typeof envKey === 'string' && envKey.trim().length > 0) {
     return envKey.trim();
   }
@@ -18,6 +30,7 @@ export const getGeminiApiKey = (): string => {
 export const setCustomGeminiApiKey = (key: string): void => {
   if (key && key.trim()) {
     localStorage.setItem('VITE_GEMINI_API_KEY', key.trim());
+    localStorage.setItem('GEMINI_API_KEY', key.trim());
   } else {
     localStorage.removeItem('VITE_GEMINI_API_KEY');
     localStorage.removeItem('GEMINI_API_KEY');
@@ -49,7 +62,38 @@ export interface ExamGenerationResult {
 }
 
 /**
- * Sinh đề thi trắc nghiệm từ văn bản lý thuyết trực tiếp trên Frontend bằng @google/genai (gemini-1.5-flash)
+ * Helper to call Gemini generateContent with primary model (gemini-3.8-flash)
+ * and fallback to (gemini-flash-latest) if model is not found.
+ */
+async function callGeminiGenerateContent(
+  aiClient: GoogleGenAI,
+  params: {
+    contents: any;
+    config?: any;
+  }
+) {
+  try {
+    return await aiClient.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: params.contents,
+      config: params.config,
+    });
+  } catch (err: any) {
+    const errorMsg = String(err?.message || '');
+    if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+      console.warn(`Primary model ${GEMINI_MODEL} returned 404, attempting fallback to ${FALLBACK_GEMINI_MODEL}:`, err);
+      return await aiClient.models.generateContent({
+        model: FALLBACK_GEMINI_MODEL,
+        contents: params.contents,
+        config: params.config,
+      });
+    }
+    throw err;
+  }
+}
+
+/**
+ * Sinh đề thi trắc nghiệm từ văn bản lý thuyết trực tiếp trên Frontend bằng @google/genai (gemini-3.8-flash)
  */
 export async function generateExamFromTheory(
   params: GenerateExamParams
@@ -117,8 +161,7 @@ Trả về DUY NHẤT một đối tượng JSON hợp lệ (không kèm markdow
   ]
 }`;
 
-    const response = await aiClient.models.generateContent({
-      model: 'gemini-1.5-flash',
+    const response = await callGeminiGenerateContent(aiClient, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -148,7 +191,7 @@ Trả về DUY NHẤT một đối tượng JSON hợp lệ (không kèm markdow
 }
 
 /**
- * Trích xuất đề thi từ file Word (.docx, .doc), PDF hoặc TXT trực tiếp trên Frontend bằng gemini-1.5-flash
+ * Trích xuất đề thi từ file Word (.docx, .doc), PDF hoặc TXT trực tiếp trên Frontend bằng gemini-3.8-flash
  */
 export async function extractExamFromFile(
   file: File,
@@ -237,10 +280,9 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không kèm backticks markd
     let responseText = '';
 
     if (isPdf) {
-      // Direct PDF processing via Base64 inlineData to Gemini 1.5 Flash
+      // Direct PDF processing via Base64 inlineData to Gemini 3.8 Flash
       const base64Data = await fileToBase64(file);
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await callGeminiGenerateContent(aiClient, {
         contents: [
           {
             role: 'user',
@@ -283,8 +325,7 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ (không kèm backticks markd
         extractedText = `File tài liệu đề thi: ${fileName}`;
       }
 
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await callGeminiGenerateContent(aiClient, {
         contents: `${promptInstructions}\n\nNỘI DUNG VĂN BẢN TRÍCH XUẤT TỪ FILE "${fileName}":\n"""\n${extractedText.slice(0, 50000)}\n"""`,
         config: {
           responseMimeType: 'application/json',
