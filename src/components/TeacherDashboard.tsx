@@ -153,7 +153,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     setFileProcessStatus('');
   };
 
-  // Process Word/PDF directly via client-side Gemini 1.5 Flash (compatible with GitHub Pages)
+  // Process Word/PDF directly via client-side Gemini 3.8 Flash (compatible with GitHub Pages)
   const handleProcessExamFile = async () => {
     if (!selectedExamFile) {
       setFileError('Vui lòng chọn hoặc kéo thả tệp Word (.docx, .doc) hoặc PDF.');
@@ -162,7 +162,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
     setIsProcessingFile(true);
     setFileError(null);
-    setFileProcessStatus('Đang đọc tệp và gửi đến AI Gemini 1.5 Flash bóc tách câu hỏi...');
+    setFileProcessStatus('Đang đọc tệp và gửi đến AI Gemini bóc tách câu hỏi...');
 
     try {
       const data = await extractExamFromFile(selectedExamFile, {
@@ -341,7 +341,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     reader.readAsText(file);
   };
 
-  // Generate with AI directly on client-side (gemini-1.5-flash for GitHub Pages)
+  // Generate with AI directly on client-side (Gemini 3.8 Flash for GitHub Pages)
   const handleGenerateAI = async () => {
     if (!aiTheoryText.trim()) {
       setAiError('Vui lòng nhập hoặc tải lên văn bản lý thuyết để AI phân tích.');
@@ -992,7 +992,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       Tải trực tiếp đề thi từ file Word (.docx, .doc) hoặc PDF
                     </h3>
                     <p className="text-xs text-slate-500">
-                      AI Gemini 1.5 Flash đọc file, bóc tách đầy đủ câu hỏi 4 lựa chọn & Đúng/Sai, tự giải đáp án và viết lời giải chi tiết.
+                      AI Gemini đọc file, bóc tách đầy đủ câu hỏi 4 lựa chọn & Đúng/Sai, tự giải đáp án và viết lời giải chi tiết.
                     </p>
                   </div>
                 </div>
@@ -1206,7 +1206,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base">
-                      Tạo đề tự động từ văn bản lý thuyết (Gemini 1.5 Flash)
+                      Tạo đề tự động từ văn bản lý thuyết (Gemini 3.8 Flash)
                     </h3>
                     <p className="text-xs text-slate-500">
                       Dán nội dung lý thuyết, bài học, tài liệu ôn tập để AI biên soạn bộ câu hỏi trắc nghiệm theo chuẩn GDPT mới.
