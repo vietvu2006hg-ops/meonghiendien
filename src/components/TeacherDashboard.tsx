@@ -37,6 +37,7 @@ import { Exam, ExamSubmission, Question, QuestionType, StatementItem, UserProfil
 import { fetchExams, saveExam, removeExam, fetchSubmissions, saveAppLogo, resetAppLogo } from '../firebase/service.ts';
 import { processLogoFile } from '../utils/imageUtils.ts';
 import { SubmissionDetailModal } from './SubmissionDetailModal.tsx';
+import { generateExamFromTheory, extractExamFromFile } from '../services/aiService.ts';
 
 interface TeacherDashboardProps {
   currentUser: UserProfile;
@@ -152,38 +153,25 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     setFileProcessStatus('');
   };
 
-  // Process Word/PDF via API
+  // Process Word/PDF directly via client-side Gemini 1.5 Flash (compatible with GitHub Pages)
   const handleProcessExamFile = async () => {
-    if (!selectedExamFile || !examFileBase64) {
+    if (!selectedExamFile) {
       setFileError('Vui lòng chọn hoặc kéo thả tệp Word (.docx, .doc) hoặc PDF.');
       return;
     }
 
     setIsProcessingFile(true);
     setFileError(null);
-    setFileProcessStatus('Đang đọc tệp và gửi đến AI Gemini 3.8 Flash bóc tách câu hỏi...');
+    setFileProcessStatus('Đang đọc tệp và gửi đến AI Gemini 1.5 Flash bóc tách câu hỏi...');
 
     try {
-      const res = await fetch('/api/ai/upload-exam', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileBase64: examFileBase64,
-          fileName: selectedExamFile.name,
-          mimeType: selectedExamFile.type,
-          mode: fileProcessingMode,
-          subject: subject !== 'Chung' ? subject : undefined,
-          grade,
-          examTitle,
-        }),
+      const data = await extractExamFromFile(selectedExamFile, {
+        mode: fileProcessingMode,
+        subject: subject !== 'Chung' ? subject : undefined,
+        grade,
+        examTitle,
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Lỗi khi xử lý file đề thi.');
-      }
-
-      const data = await res.json();
       if (data.title) setExamTitle(data.title);
       if (data.subject && data.subject !== 'Chung') setSubject(data.subject);
       if (data.grade) setGrade(data.grade);
@@ -353,7 +341,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     reader.readAsText(file);
   };
 
-  // Generate with AI
+  // Generate with AI directly on client-side (gemini-1.5-flash for GitHub Pages)
   const handleGenerateAI = async () => {
     if (!aiTheoryText.trim()) {
       setAiError('Vui lòng nhập hoặc tải lên văn bản lý thuyết để AI phân tích.');
@@ -364,25 +352,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     setIsGeneratingAi(true);
 
     try {
-      const res = await fetch('/api/ai/generate-exam', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theoryText: aiTheoryText,
-          examTitle: examTitle || `Đề kiểm tra ${subject} ${grade}`,
-          subject,
-          grade,
-          mcCount: aiMcCount,
-          tfCount: aiTfCount,
-        }),
+      const data = await generateExamFromTheory({
+        theoryText: aiTheoryText,
+        examTitle: examTitle || `Đề kiểm tra ${subject} ${grade}`,
+        subject,
+        grade,
+        mcCount: aiMcCount,
+        tfCount: aiTfCount,
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Lỗi khi gọi API AI tạo đề thi.');
-      }
-
-      const data = await res.json();
       if (data.title && !examTitle) {
         setExamTitle(data.title);
       }
@@ -1014,7 +992,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       Tải trực tiếp đề thi từ file Word (.docx, .doc) hoặc PDF
                     </h3>
                     <p className="text-xs text-slate-500">
-                      AI Gemini 3.8 Flash đọc file, bóc tách đầy đủ câu hỏi 4 lựa chọn & Đúng/Sai, tự giải đáp án và viết lời giải chi tiết.
+                      AI Gemini 1.5 Flash đọc file, bóc tách đầy đủ câu hỏi 4 lựa chọn & Đúng/Sai, tự giải đáp án và viết lời giải chi tiết.
                     </p>
                   </div>
                 </div>
@@ -1228,7 +1206,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base">
-                      Tạo đề tự động từ văn bản lý thuyết (Gemini 3.8 Flash)
+                      Tạo đề tự động từ văn bản lý thuyết (Gemini 1.5 Flash)
                     </h3>
                     <p className="text-xs text-slate-500">
                       Dán nội dung lý thuyết, bài học, tài liệu ôn tập để AI biên soạn bộ câu hỏi trắc nghiệm theo chuẩn GDPT mới.

@@ -16,6 +16,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Exam, ExamSubmission, Question, UserProfile } from '../types.ts';
 import { submitExamResult } from '../firebase/service.ts';
+import { gradeExam } from '../utils/grading.ts';
 
 interface ExamRunnerProps {
   exam: Exam;
@@ -148,22 +149,8 @@ export const ExamRunner: React.FC<ExamRunnerProps> = ({
         Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
       );
 
-      // Call secure grading endpoint
-      const response = await fetch('/api/exams/grade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          questions: exam.questions, // original questions with answer keys
-          userAnswers: answers,
-          durationSpentSeconds: timeSpent,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Lỗi khi đối chiếu và chấm điểm bài thi.');
-      }
-
-      const gradeResult = await response.json();
+      // Direct client-side standardized grading (supports static GitHub Pages)
+      const gradeResult = gradeExam(exam.questions, answers, timeSpent);
 
       // Fire celebratory confetti for achievement
       try {
