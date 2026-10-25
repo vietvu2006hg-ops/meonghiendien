@@ -5,8 +5,19 @@ import { FirebaseCustomConfig } from '../types.ts';
 
 const FIREBASE_CONFIG_STORAGE_KEY = 'smarttest_firebase_config';
 
-// Retrieve stored custom Firebase config or defaults
-export function getSavedFirebaseConfig(): FirebaseCustomConfig | null {
+// Cấu hình Firebase mặc định tích hợp trực tiếp trong ứng dụng
+// Dự án: esp32-test-36152
+export const DEFAULT_FIREBASE_CONFIG: FirebaseCustomConfig = {
+  apiKey: 'AIzaSyCsacFzgeLzuM8hXzEV-dzVECpDqPJ76NE',
+  authDomain: 'esp32-test-36152.firebaseapp.com',
+  projectId: 'esp32-test-36152',
+  storageBucket: 'esp32-test-36152.firebasestorage.app',
+  messagingSenderId: '816661796884',
+  appId: '1:816661796884:web:9e8f3e4071a4bc329cef01',
+};
+
+// Retrieve stored custom Firebase config or fallback to built-in default
+export function getSavedFirebaseConfig(): FirebaseCustomConfig {
   try {
     const raw = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
     if (raw) {
@@ -16,9 +27,9 @@ export function getSavedFirebaseConfig(): FirebaseCustomConfig | null {
       }
     }
   } catch (e) {
-    console.warn('Cannot read stored Firebase config:', e);
+    console.warn('Cannot read stored Firebase config, using default:', e);
   }
-  return null;
+  return DEFAULT_FIREBASE_CONFIG;
 }
 
 export function saveFirebaseConfig(config: FirebaseCustomConfig) {
@@ -36,20 +47,20 @@ let authInstance: Auth | null = null;
 let firestoreInstance: Firestore | null = null;
 let isConfigured = false;
 
-// Check if config is present
-const customConfig = getSavedFirebaseConfig();
+// Check if config is present (always true due to DEFAULT_FIREBASE_CONFIG)
+const activeConfig = getSavedFirebaseConfig();
 
-if (customConfig && customConfig.apiKey && customConfig.projectId) {
+if (activeConfig && activeConfig.apiKey && activeConfig.projectId) {
   try {
     if (!getApps().length) {
-      appInstance = initializeApp(customConfig);
+      appInstance = initializeApp(activeConfig);
     } else {
       appInstance = getApp();
     }
     authInstance = getAuth(appInstance);
     firestoreInstance = getFirestore(appInstance);
     isConfigured = true;
-    console.log('Firebase initialized successfully with project:', customConfig.projectId);
+    console.log('Firebase initialized successfully with project:', activeConfig.projectId);
   } catch (error) {
     console.error('Firebase initialization failed:', error);
     isConfigured = false;
@@ -59,4 +70,4 @@ if (customConfig && customConfig.apiKey && customConfig.projectId) {
 export const auth = authInstance;
 export const db = firestoreInstance;
 export const isFirebaseActive = isConfigured;
-export const activeProjectId = customConfig?.projectId || null;
+export const activeProjectId = activeConfig?.projectId || null;

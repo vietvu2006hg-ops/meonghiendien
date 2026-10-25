@@ -142,7 +142,7 @@ export async function registerUser(
   email: string,
   password: string,
   fullName: string,
-  role: UserRole
+  role: UserRole = 'student'
 ): Promise<UserProfile> {
   const fbAuth = auth;
   const firestore = db;

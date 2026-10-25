@@ -26,7 +26,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onOpenFirebas
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<UserRole>('student');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +50,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onOpenFirebas
         if (password.length < 6) {
           throw new Error('Mật khẩu cần tối thiểu 6 ký tự.');
         }
-        await registerUser(email.trim(), password, fullName.trim(), role);
+        await registerUser(email.trim(), password, fullName.trim(), 'student');
       }
       onAuthSuccess();
     } catch (err: any) {
@@ -136,68 +135,27 @@ export const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onOpenFirebas
               </div>
             )}
 
-            {/* If Register: Full name and Role selection */}
+            {/* If Register: Full name only, role defaults to student */}
             {!isLogin && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Họ và Tên thật <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Ví dụ: Nguyễn Văn An"
-                      className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                    />
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Tên thật sẽ được lưu vào hệ thống để ghi nhận kết quả và xuất bảng điểm.
-                  </p>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Họ và Tên thật <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Ví dụ: Nguyễn Văn An"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                  />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Vai trò trong trường <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setRole('student')}
-                      className={`p-3 rounded-xl border text-left transition flex items-center gap-2.5 ${
-                        role === 'student'
-                          ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 ring-1 ring-indigo-500'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <School className="w-4 h-4 text-indigo-600 shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold">Học sinh</div>
-                        <div className="text-[10px] text-slate-500">Làm bài & xem điểm</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setRole('teacher')}
-                      className={`p-3 rounded-xl border text-left transition flex items-center gap-2.5 ${
-                        role === 'teacher'
-                          ? 'border-purple-600 bg-purple-50/70 text-purple-900 ring-1 ring-purple-500'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold">Giáo viên (Admin)</div>
-                        <div className="text-[10px] text-slate-500">Tạo đề thi & xem điểm</div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Tài khoản đăng ký mặc định là <strong>Học sinh</strong>. Quyền Giáo viên sẽ được kích hoạt trực tiếp từ Firestore Database.
+                </p>
+              </div>
             )}
 
             {/* Email */}
